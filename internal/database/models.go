@@ -8,7 +8,6 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	_ "github.com/google/uuid"
 )
 
 type User struct {

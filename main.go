@@ -29,13 +29,16 @@ func main() {
 	mux := http.NewServeMux()
 
 	apiCfg := apiConfig{
-		dbQueries: dbQueries,
+		fileserverHits: atomic.Int32{},
+		dbQueries:      dbQueries,
+		Platform:       os.Getenv("PLATFORM"),
 	}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 
 	mux.HandleFunc("GET /api/healthz", handlerHealthz)
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
@@ -58,6 +61,7 @@ func handlerHealthz(w http.ResponseWriter, r *http.Request) {
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	dbQueries      *database.Queries
+	Platform       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -74,7 +78,14 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
+	if cfg.Platform != "dev" {
+		respondWithError(w, 403, "Forbidden", nil)
+		return
+	}
+	err := cfg.dbQueries.DeleteUser(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't delete users", err)
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 }
