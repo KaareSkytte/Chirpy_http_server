@@ -1,19 +1,36 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+
+	"github.com/joho/godotenv"
+	"github.com/ksk/httpserver/internal/database"
+	_ "github.com/lib/pq"
 )
 
 func main() {
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Printf("Couldn't open database: %s", err)
+	}
+	dbQueries := database.New(db)
+
 	const filepathRoot = "."
 	const port = "8080"
 
 	mux := http.NewServeMux()
 
-	apiCfg := apiConfig{}
+	apiCfg := apiConfig{
+		dbQueries: dbQueries,
+	}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 
@@ -40,6 +57,7 @@ func handlerHealthz(w http.ResponseWriter, r *http.Request) {
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	dbQueries      *database.Queries
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
