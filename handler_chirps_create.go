@@ -83,3 +83,81 @@ func replaceProfanity(text string) string {
 
 	return strings.Join(words[:], " ")
 }
+
+func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.dbQueries.GetChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't fetch chirps", err)
+		return
+	}
+
+	mainChirps := []Chirp{}
+
+	for _, dbChirp := range dbChirps {
+		mainChirps = append(mainChirps, Chirp{
+			ID:        dbChirp.ID,
+			CreatedAt: dbChirp.CreatedAt,
+			UpdatedAt: dbChirp.UpdatedAt,
+			UserID:    dbChirp.UserID,
+			Body:      dbChirp.Body,
+		})
+	}
+
+	jsonData, err := json.MarshalIndent(mainChirps, "", " ")
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't Marshal data", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
+}
+
+func (cfg *apiConfig) handlerChirpGet(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.dbQueries.GetChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't fetch chirps", err)
+		return
+	}
+
+	chirpID := r.PathValue("chirpID")
+	id, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't fetch ID", err)
+		return
+	}
+
+	mainChirp := Chirp{}
+	foundChirp := false
+
+	for _, dbChirp := range dbChirps {
+		if dbChirp.ID == id {
+			mainChirp = Chirp{
+				ID:        dbChirp.ID,
+				CreatedAt: dbChirp.CreatedAt,
+				UpdatedAt: dbChirp.UpdatedAt,
+				UserID:    dbChirp.UserID,
+				Body:      dbChirp.Body,
+			}
+			foundChirp = true
+			break
+		}
+	}
+
+	if !foundChirp {
+		w.WriteHeader(404)
+		w.Write([]byte("Chirp not found"))
+		return
+	}
+
+	jsonData, err := json.Marshal(mainChirp)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't Marshal data", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
+}

@@ -7,27 +7,41 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/ksk/httpserver/internal/auth"
+	"github.com/ksk/httpserver/internal/database"
 )
 
 func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
-	type email struct {
-		Email string `json:"email"`
+	type userRequest struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	userEmail := email{}
-	err := decoder.Decode(&userEmail)
+	request := userRequest{}
+	err := decoder.Decode(&request)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
 	}
 
-	nullString := sql.NullString{
-		String: userEmail.Email,
+	hashPassword, err := auth.HashPassword(request.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't hash password", err)
+		return
+	}
+
+	emailNullString := sql.NullString{
+		String: request.Email,
 		Valid:  true,
 	}
 
-	user, err := cfg.dbQueries.CreateUser(r.Context(), nullString)
+	params := database.CreateUserParams{
+		Email:          emailNullString,
+		HashedPassword: hashPassword,
+	}
+
+	user, err := cfg.dbQueries.CreateUser(r.Context(), params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create user", err)
 		return
