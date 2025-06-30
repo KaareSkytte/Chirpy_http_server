@@ -40,10 +40,6 @@ Chirpy is a backend service that provides endpoints to create and retrieve chirp
 
 This project demonstrates practical Go skills, including:
 
-- Designing and implementing RESTful APIs
-- Structuring Go projects for clarity and maintainability
-- Handling JSON payloads and HTTP routing
-
   ## Why Chirpy?
 
 This project demonstrates practical Go skills, including:
