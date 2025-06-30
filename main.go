@@ -17,6 +17,7 @@ func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	jwt_secret := os.Getenv("JWT_SECRET")
+	polka_key := os.Getenv("POLKA_KEY")
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
@@ -34,6 +35,7 @@ func main() {
 		dbQueries:      dbQueries,
 		Platform:       os.Getenv("PLATFORM"),
 		jwtSecret:      jwt_secret,
+		polkaKey:       polka_key,
 	}
 
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
@@ -73,6 +75,7 @@ type apiConfig struct {
 	dbQueries      *database.Queries
 	Platform       string
 	jwtSecret      string
+	polkaKey       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {

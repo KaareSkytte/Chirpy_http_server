@@ -5,9 +5,21 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/ksk/httpserver/internal/auth"
 )
 
 func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Request) {
+	api_key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Unauthorized", err)
+		return
+	}
+
+	if api_key != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "Wrong API Key", nil)
+		return
+	}
+
 	type requestWebhook struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -17,7 +29,7 @@ func (cfg *apiConfig) handlerPolkaWebhooks(w http.ResponseWriter, r *http.Reques
 
 	decoder := json.NewDecoder(r.Body)
 	request := requestWebhook{}
-	err := decoder.Decode(&request)
+	err = decoder.Decode(&request)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
