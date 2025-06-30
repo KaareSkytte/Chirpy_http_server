@@ -50,10 +50,11 @@ func (cfg *apiConfig) handlerUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseUser := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt.Time,
-		UpdatedAt: user.UpdatedAt.Time,
-		Email:     user.Email.String,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt.Time,
+		UpdatedAt:   user.UpdatedAt.Time,
+		Email:       user.Email.String,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	jsonResponse, err := json.Marshal(responseUser)
@@ -72,6 +73,7 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	Email        string    `json:"email"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 	Token        string    `json:"token"`
 	RefreshToken string    `json:"refresh_token"`
 }
@@ -131,10 +133,11 @@ func (cfg *apiConfig) handlerUsersUpdate(w http.ResponseWriter, r *http.Request)
 	}
 
 	userResponse := User{
-		ID:        updatedUser.ID,
-		Email:     updatedUser.Email.String,
-		CreatedAt: updatedUser.CreatedAt.Time,
-		UpdatedAt: updatedUser.UpdatedAt.Time,
+		ID:          updatedUser.ID,
+		Email:       updatedUser.Email.String,
+		CreatedAt:   updatedUser.CreatedAt.Time,
+		UpdatedAt:   updatedUser.UpdatedAt.Time,
+		IsChirpyRed: updatedUser.IsChirpyRed,
 	}
 
 	respondWithJSON(w, http.StatusOK, userResponse)

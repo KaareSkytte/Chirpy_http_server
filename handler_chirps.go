@@ -215,11 +215,8 @@ func (cfg *apiConfig) handlerChirpDelete(w http.ResponseWriter, r *http.Request)
 	for _, dbChirp := range dbChirps {
 		if dbChirp.ID == id {
 			mainChirp = Chirp{
-				ID:        dbChirp.ID,
-				CreatedAt: dbChirp.CreatedAt,
-				UpdatedAt: dbChirp.UpdatedAt,
-				UserID:    dbChirp.UserID,
-				Body:      dbChirp.Body,
+				ID:     dbChirp.ID,
+				UserID: dbChirp.UserID,
 			}
 			foundChirp = true
 			break

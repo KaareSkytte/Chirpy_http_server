@@ -11,7 +11,7 @@ import (
 )
 
 const checkEmail = `-- name: CheckEmail :one
-SELECT id, created_at, updated_at, email, hashed_password FROM users
+SELECT id, created_at, updated_at, email, hashed_password, is_chirpy_red FROM users
 WHERE email = $1
 `
 
@@ -24,6 +24,7 @@ func (q *Queries) CheckEmail(ctx context.Context, email sql.NullString) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.HashedPassword,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
