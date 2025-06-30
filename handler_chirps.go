@@ -173,3 +173,75 @@ func (cfg *apiConfig) handlerChirpGet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonData)
 }
+
+func (cfg *apiConfig) handlerChirpDelete(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+
+	if authHeader == "" {
+		respondWithError(w, http.StatusUnauthorized, "Missing authorization header", nil)
+		return
+	}
+
+	headerParts := strings.Split(authHeader, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		respondWithError(w, http.StatusUnauthorized, "Invalid authorization header format", nil)
+		return
+	}
+
+	accessToken := headerParts[1]
+
+	userID, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Authorization denied", err)
+		return
+	}
+
+	chirpID := r.PathValue("chirpID")
+	id, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Couldn't fetch ID", err)
+		return
+	}
+
+	dbChirps, err := cfg.dbQueries.GetChirps(r.Context())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't fetch chirps", err)
+		return
+	}
+
+	mainChirp := Chirp{}
+	foundChirp := false
+
+	for _, dbChirp := range dbChirps {
+		if dbChirp.ID == id {
+			mainChirp = Chirp{
+				ID:        dbChirp.ID,
+				CreatedAt: dbChirp.CreatedAt,
+				UpdatedAt: dbChirp.UpdatedAt,
+				UserID:    dbChirp.UserID,
+				Body:      dbChirp.Body,
+			}
+			foundChirp = true
+			break
+		}
+	}
+
+	if !foundChirp {
+		w.WriteHeader(404)
+		w.Write([]byte("Chirp not found"))
+		return
+	}
+
+	if userID != mainChirp.UserID {
+		respondWithError(w, http.StatusForbidden, "Chirp ownership denied", err)
+		return
+	}
+
+	err = cfg.dbQueries.DeleteChirp(r.Context(), mainChirp.ID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't delete chirp", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
