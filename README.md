@@ -38,8 +38,6 @@ Chirpy is a backend service that provides endpoints to create and retrieve chirp
     ```
     The server will start (by default) on port 8080.
 
-This project demonstrates practical Go skills, including:
-
   ## Why Chirpy?
 
 This project demonstrates practical Go skills, including:
